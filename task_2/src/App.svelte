@@ -1,88 +1,109 @@
 <script lang="ts">
   import Input from "./lib/Input.svelte";
+  import { onMount } from "svelte";
   import Select from "./lib/Select.svelte";
-  import ALL from "./comp.json";
-  import full from "./currencies.json";
+  import currencies from "./currencies";
+  import fetchRate from "./fetchers/fetchRate";
 
-  let res = [];
-  for (let [key, _] of Object.entries(ALL)) {
-    console.log(key);
-    res.push({[key]: {id: key, name: full[key]['name']}})
-  }
+  onMount(async () => {
+    Promise.all([fetchRate("RUB"), fetchRate("USD")]);
+  });
 
-  console.log(res)
-
-  let currencies = [
-    {
-      val: "USD",
-      title: "United states dollar"
-    },
-    {
-      val: "UZS",
-      title: "Uzbekistan so'm"
-    },
-    {
-      val: "RUB",
-      title: "Russian ruble"
-    },
-    {
-      val: "TNG",
-      title: "Kirgiz tenge"
-    },
-    {
-      val: "EUR",
-      title: "Euro"
-    },
-  ]
-
+  let isLoading = false;
   let exchange = {
-    fromCur: "USD", 
-    toCur: 'RUB',
+    fromCur: "USD",
+    toCur: "RUB",
     fromAmount: 0,
     toAmount: 0,
-  }
+  };
 
-  function handleChange(ev: InputEvent ) {
+  async function handleChange(ev: InputEvent) {
     if (ev.target instanceof HTMLInputElement) {
-      console.log('x')
-      let {name, value} = ev.target;
+      console.log("x");
+      let { name, value } = ev.target;
       let val = Number(value);
       if (isNaN(val) || !isFinite(val)) {
         exchange[name] = exchange[name];
       } else {
         exchange[name] = val;
       }
-      if (name == 'fromAmount') {
-        exchange.toAmount = exchange.fromAmount / 10;
+      if (name == "fromAmount") {
+        let from = await fetchRate(exchange.fromCur);
+        exchange.toAmount = exchange.fromAmount * from[exchange.toCur];
       }
-      if (name == 'toAmount') {
-        exchange.fromAmount = exchange.toAmount / 10;
+      if (name == "toAmount") {
+        let to = await fetchRate(exchange.toCur);
+        exchange.fromAmount = exchange.toAmount * to[exchange.fromCur];
       }
     }
     if (ev.target instanceof HTMLSelectElement) {
-      console.log('y')
-      let {name, value} = ev.target;
+      isLoading = true;
+      console.log(isLoading);
+      console.log("y");
+      let { name, value } = ev.target;
       exchange[name] = value;
+      const x = await fetchRate(value);
+      console.log(x);
+      isLoading = false;
+      console.log(isLoading);
     }
   }
 </script>
 
-<main class="flex flex-col items-center justify-center gap-8" >
-  <header class="p-4 w-full sticky top-0 z-50 backdrop-blur-md text-center" >
-    <h1 class="text-4xl m-auto">Currency Converter</h1>
+<main class="flex flex-col items-center justify-center gap-8">
+  <header
+    class="w-full sticky top-0 z-50 backdrop-blur-md text-center border-b border-neutral-600"
+  >
+    <h1 class="text-4xl m-auto p-4">Currency Converter</h1>
   </header>
 
-  <form class="flex gap-8" action="#">
+  <form class="flex gap-8 relative" action="#">
+    {#if isLoading}
+      <div
+        class={`absolute left-1/2 w-24 rounded-full border-blue-600 border-[11px] spin border-dotted aspect-square`}
+      />
+    {/if}
     <div>
-      <Select value={exchange.fromCur} title="From" changeHandler={handleChange} name='fromCur' options={currencies.filter(x => x.val != exchange.toCur)} />
-      <Input title="" changeHandler={handleChange} value={exchange.fromAmount} name="fromAmount" />
+      <Select
+        value={exchange.fromCur}
+        title="From"
+        changeHandler={handleChange}
+        name="fromCur"
+        options={currencies.filter((x) => x.id != exchange.toCur)}
+      />
+      <Input
+        title=""
+        changeHandler={handleChange}
+        value={exchange.fromAmount}
+        name="fromAmount"
+      />
     </div>
     <div>
-      <Select value={exchange.toCur} title="To" changeHandler={handleChange} name='toCur' options={currencies.filter(x => x.val != exchange.fromCur)} />
-      <Input title="" changeHandler={handleChange} value={exchange.toAmount} name="toAmount"  />
+      <Select
+        value={exchange.toCur}
+        title="To"
+        changeHandler={handleChange}
+        name="toCur"
+        options={currencies.filter((x) => x.id != exchange.fromCur)}
+      />
+      <Input
+        title=""
+        changeHandler={handleChange}
+        value={exchange.toAmount}
+        name="toAmount"
+      />
     </div>
   </form>
-  <h3>{exchange.fromAmount} {exchange.fromCur} will be {exchange.toAmount} {exchange.toCur}</h3>
-  
-  <a class="fixed bottom-4 right-4 text-cyan-700" href="https://www.exchangerate-api.com" referrerpolicy="no-referrer" target="_blank">Rates By Exchange Rate API</a>
+  <h3>
+    {exchange.fromAmount}
+    {exchange.fromCur} will be {exchange.toAmount}
+    {exchange.toCur}
+  </h3>
+
+  <a
+    class="fixed bottom-4 right-4 text-cyan-700 hover:text-blue-500"
+    href="https://www.exchangerate-api.com"
+    referrerpolicy="no-referrer"
+    target="_blank">Rates By Exchange Rate API</a
+  >
 </main>
