@@ -1,15 +1,68 @@
 <script lang="ts">
   import Input from "./lib/Input.svelte";
+  import Select from "./lib/Select.svelte";
+  import ALL from "./comp.json";
+  import full from "./currencies.json";
+
+  let res = [];
+  for (let [key, _] of Object.entries(ALL)) {
+    console.log(key);
+    res.push({[key]: {id: key, name: full[key]['name']}})
+  }
+
+  console.log(res)
+
+  let currencies = [
+    {
+      val: "USD",
+      title: "United states dollar"
+    },
+    {
+      val: "UZS",
+      title: "Uzbekistan so'm"
+    },
+    {
+      val: "RUB",
+      title: "Russian ruble"
+    },
+    {
+      val: "TNG",
+      title: "Kirgiz tenge"
+    },
+    {
+      val: "EUR",
+      title: "Euro"
+    },
+  ]
+
   let exchange = {
-    from: 0,
-    to: 0,
+    fromCur: "USD", 
+    toCur: 'RUB',
+    fromAmount: 0,
+    toAmount: 0,
   }
 
   function handleChange(ev: InputEvent ) {
     if (ev.target instanceof HTMLInputElement) {
+      console.log('x')
       let {name, value} = ev.target;
-      let val = Number(value) || 0;
-      exchange[name] = isFinite(val) ? val : 0;
+      let val = Number(value);
+      if (isNaN(val) || !isFinite(val)) {
+        exchange[name] = exchange[name];
+      } else {
+        exchange[name] = val;
+      }
+      if (name == 'fromAmount') {
+        exchange.toAmount = exchange.fromAmount / 10;
+      }
+      if (name == 'toAmount') {
+        exchange.fromAmount = exchange.toAmount / 10;
+      }
+    }
+    if (ev.target instanceof HTMLSelectElement) {
+      console.log('y')
+      let {name, value} = ev.target;
+      exchange[name] = value;
     }
   }
 </script>
@@ -20,11 +73,16 @@
   </header>
 
   <form class="flex gap-8" action="#">
-    <Input title="From" changeHandler={handleChange} value={exchange.from} name="from" />
-    <Input title="To" changeHandler={handleChange} value={exchange.to} name="to"  />
+    <div>
+      <Select value={exchange.fromCur} title="From" changeHandler={handleChange} name='fromCur' options={currencies.filter(x => x.val != exchange.toCur)} />
+      <Input title="" changeHandler={handleChange} value={exchange.fromAmount} name="fromAmount" />
+    </div>
+    <div>
+      <Select value={exchange.toCur} title="To" changeHandler={handleChange} name='toCur' options={currencies.filter(x => x.val != exchange.fromCur)} />
+      <Input title="" changeHandler={handleChange} value={exchange.toAmount} name="toAmount"  />
+    </div>
   </form>
-
-  <h3>{exchange.from} in some currency will be {exchange.to} in other currency</h3>
+  <h3>{exchange.fromAmount} {exchange.fromCur} will be {exchange.toAmount} {exchange.toCur}</h3>
   
   <a class="fixed bottom-4 right-4 text-cyan-700" href="https://www.exchangerate-api.com" referrerpolicy="no-referrer" target="_blank">Rates By Exchange Rate API</a>
 </main>
