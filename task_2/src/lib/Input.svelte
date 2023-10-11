@@ -1,5 +1,5 @@
 <script lang="ts">
-  export let value: string;
+  export let value: number;
   export let changeHandler: (ev: Event) => void;
   export let title: string;
   export let name: string;

@@ -19,7 +19,6 @@
 
   async function handleChange(ev: InputEvent) {
     if (ev.target instanceof HTMLInputElement) {
-      console.log("x");
       let { name, value } = ev.target;
       let val = Number(value);
       if (isNaN(val) || !isFinite(val)) {
@@ -38,14 +37,10 @@
     }
     if (ev.target instanceof HTMLSelectElement) {
       isLoading = true;
-      console.log(isLoading);
-      console.log("y");
       let { name, value } = ev.target;
       exchange[name] = value;
       const x = await fetchRate(value);
-      console.log(x);
       isLoading = false;
-      console.log(isLoading);
     }
   }
 </script>
