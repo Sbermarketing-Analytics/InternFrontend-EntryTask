@@ -1,8 +1,27 @@
-import {encoded, translations} from './data.js'
+import { encoded, translations } from './data.js';
 
-console.log("Let's rock")
-console.log(encoded, translations)
+function decodeFields(encoded, translations) {
+    const decoded = encoded.map(item => {
+        const decodedItem = {...item };
 
+        for (const key in item) {
+            if (key.endsWith("Id")) {
+                const id = item[key];
+                if (id in translations) {
+                    decodedItem[key] = translations[id];
+                }
+            }
+        }
 
+        return decodedItem;
+    });
 
-// console.log(decoded)
+    const uniqueIds = Array.from(
+        new Set(encoded.flatMap(item => Object.values(item).filter(val => typeof val === "string" && val.endsWith("Id")))));
+
+    return { decoded, uniqueIds };
+}
+
+const result = decodeFields(encoded, translations);
+console.log("Decoded:", result.decoded);
+console.log("Unique Ids:", result.uniqueIds);
